@@ -12,7 +12,10 @@
 <body>
     <div id="app">
         <p v-text="msg | uppercase" class='test'></p>
-        <p v-on="click:handle">我应该是红色的字体</p>
+        <p v-on="click:handle">点我弹出框</p>
+        <p v-class="" class="test"></p>
+        <span v-text="msg"></span>
+        <div v-each="item:items" v-text="item | uppercase" v-on="click:handle"></div>
     </div>
 
 <script src="./bundle.js"></script>

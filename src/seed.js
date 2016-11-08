@@ -39,9 +39,11 @@ Seed.prototype.compileNode = function (node) {
         var value = attr.value;
         if (name.indexOf(prefix) == -1) return;
         var binding = Binding.parse(name.slice(2), value);
-        var binder = self.bindings[name]
-                ? self.bindings[name]
-                : self.createBinder(node, binding);
+        //放在这个地方是为了防止"多个标签都有同一个指令时，只有第一个指令含有el属性"
+        binding.el = node;
+        var binder = self.bindings[name.slice(2)] || self.createBinder(node, binding);
+                // ? self.bindings[name]
+                // : self.createBinder(node, binding);
 
         binder.bindingInstances.push(binding);
     })
@@ -50,11 +52,12 @@ Seed.prototype.compileNode = function (node) {
 
 Seed.prototype.createBinder = function (node, bindingInstance) {
 
-    bindingInstance.el = node;
+    // bindingInstance.el = node;
     var binder = {
         value: '',
         bindingInstances: []
     };
+
     this.bindings[bindingInstance.dir] = binder;
 
     Object.defineProperty(this.data, bindingInstance.key, {
@@ -66,11 +69,14 @@ Seed.prototype.createBinder = function (node, bindingInstance) {
             bindingInstance.filters.forEach(function (filter) {
                 newValue = Filter[filter](newValue);
             });
-            if (bindingInstance.arg) {
-                bindingInstance.update(bindingInstance.el, newValue, bindingInstance.arg);
-            } else {
-                bindingInstance.update(bindingInstance.el, newValue);
-            }
+            each.call(binder.bindingInstances, function (bindingInstance) {
+                if (bindingInstance.arg) {
+                    bindingInstance.update(bindingInstance.el, newValue, bindingInstance.arg);
+                } else {
+                    bindingInstance.update(bindingInstance.el, newValue);
+                }
+            })
+
 
         }
     });

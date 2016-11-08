@@ -9,8 +9,8 @@ function Binding (dirname, express) {
     // if (dirname.indexOf('v-') == -1) return;
     // dirname = dirname.slice(2);
     var key_re = express.match(KEY_RE);
+    console.log(express);
     var _key = key_re[0].match(ON_KEY_RE);
-    console.log(_key);
     var key = _key
         ? _key[2]
         : key_re[0];
@@ -31,7 +31,7 @@ function Binding (dirname, express) {
         dir: dirname,
         update: typeof Directive[dirname] == 'function'
                          ? Directive[dirname]
-                         : Directive['on'].update
+                         : Directive[dirname].update
     };
 }
 
