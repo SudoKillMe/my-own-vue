@@ -6,33 +6,45 @@ var ON_KEY_RE = /(.+):(.+)/;
 var FILTER_RE = /\|[^\|]+/g;
 
 function Binding (dirname, express) {
-    // if (dirname.indexOf('v-') == -1) return;
-    // dirname = dirname.slice(2);
-    var key_re = express.match(KEY_RE);
-    console.log(express);
-    var _key = key_re[0].match(ON_KEY_RE);
-    var key = _key
-        ? _key[2]
-        : key_re[0];
-    var arg = _key
-            ? _key[1]
-            : null;
+    var binding = {};
+    var dir = dirname;
 
-    var filter_re = express.match(FILTER_RE);
-    var filters = filter_re
-            ? filter_re.map(function (filter) {
-                return filter.slice(1).trim();
-            })
-            : [];
-    return {
-        key: key.trim(),
-        filters: filters,
-        arg: arg,
-        dir: dirname,
-        update: typeof Directive[dirname] == 'function'
-                         ? Directive[dirname]
-                         : Directive[dirname].update
-    };
+    var key_res = express.match(KEY_RE);
+    var key = key_res
+        ? key_res[0].trim()
+        : null
+
+    var arg_res = key.match(ON_KEY_RE);
+    var arg = arg_res
+        ? arg_res[1]
+        : null
+    key = arg_res
+        ? arg_res[2]
+        : key
+
+
+    var filter_res = express.match(FILTER_RE);
+    var filters = filter_res
+        ? filter_res.map(function (filter) {
+            return filter.slice(1).trim();
+        })
+        : null
+
+    if (typeof Directive[dir] == 'function') {
+        binding.update = Directive[dir];
+    } else {
+        binding.update = Directive[dir].update;
+        for (var i in Directive[dir]) {
+            binding[i] = Directive[dir][i];
+        }
+    }
+
+    binding.key = key;
+    binding.arg = arg;
+    binding.filters = filters;
+    binding.dir = dir;
+
+    return binding;
 }
 
 Binding.parse = function (dirname, express) {

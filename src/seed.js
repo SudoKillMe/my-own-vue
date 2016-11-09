@@ -33,48 +33,54 @@ Seed.prototype.compileNode = function (node) {
             self.compileNode(child);
         });
     }
-    var attrs = node.attributes;
-    each.call(attrs, function (attr) {
-        var name = attr.name;
-        var value = attr.value;
-        if (name.indexOf(prefix) == -1) return;
-        var binding = Binding.parse(name.slice(2), value);
-        //放在这个地方是为了防止"多个标签都有同一个指令时，只有第一个指令含有el属性"
-        binding.el = node;
-        var binder = self.bindings[name.slice(2)] || self.createBinder(node, binding);
-                // ? self.bindings[name]
-                // : self.createBinder(node, binding);
+    //过滤掉评论标签
+    if (node.attributes && node.attributes.length) {
+        var attrs = node.attributes;
+        each.call(attrs, function (attr) {
+            var name = attr.name;
+            var value = attr.value;
+            if (name.indexOf(prefix) == -1) return;
+            var binding = Binding.parse(name.slice(2), value);
 
-        binder.bindingInstances.push(binding);
-    })
+            self.bind(node, binding);
+        })
+    }
 
 }
 
-Seed.prototype.createBinder = function (node, bindingInstance) {
+Seed.prototype.bind = function (node, binding) {
+    binding.el = node;
+    var key = binding.key;
+    var binder = this.bindings[key] || this.createBinder(key);
+
+    binder.instances.push(binding);
+}
+
+
+Seed.prototype.createBinder = function (key) {
 
     // bindingInstance.el = node;
     var binder = {
         value: '',
-        bindingInstances: []
+        instances: []
     };
 
-    this.bindings[bindingInstance.dir] = binder;
+    this.bindings[key] = binder;
 
-    Object.defineProperty(this.data, bindingInstance.key, {
+    Object.defineProperty(this.data, key, {
         get: function () {
             return binder.value;
         },
         set: function (newValue) {
             binder.value = newValue;
-            bindingInstance.filters.forEach(function (filter) {
-                newValue = Filter[filter](newValue);
-            });
-            each.call(binder.bindingInstances, function (bindingInstance) {
-                if (bindingInstance.arg) {
-                    bindingInstance.update(bindingInstance.el, newValue, bindingInstance.arg);
-                } else {
-                    bindingInstance.update(bindingInstance.el, newValue);
+            each.call(binder.instances, function (binding) {
+                if (binding.filters) {
+                    binding.filters.forEach(function (filter) {
+                        newValue = Filter[filter].call(null, newValue);
+                    });
                 }
+                binding.update(binding.el, newValue);
+
             })
 
 
